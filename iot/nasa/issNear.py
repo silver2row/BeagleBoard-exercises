@@ -60,13 +60,13 @@ def is_nighttime():
 # Global variable to control the blinking thread
 blinking = False
 
-def blink_led():
+def blink_led(fast=False):
     global blinking
     while blinking:
         lines.set_values([1])  # Turn on LED
-        time.sleep(0.5)        # Wait 0.5 seconds
+        time.sleep(0.2 if fast else 0.5)  # Faster blink if fast=True
         lines.set_values([0])  # Turn off LED
-        time.sleep(0.5)        # Wait 0.5 seconds
+        time.sleep(0.2 if fast else 0.5)  # Faster blink if fast=True
 
 def control_led_based_on_distance():
     global blinking
@@ -90,12 +90,18 @@ def control_led_based_on_distance():
         # Get the distance from the ISS to city
         # geodesic returns distance in miles between two points
         distance = geodesic(iss, city).miles
+
         cleaned_address = getLoc.address.replace(", United States", "").strip()
         print('Distance from ISS to ', cleaned_address, ':', 
               int(distance), 'miles, ', int(distance*1.60934), 'km')
 
         # Check the distance and control the LED
-        if distance < 500:
+        if distance < 250:
+            print("Distance < 250 miles")
+            if not blinking:
+                blinking = True
+                threading.Thread(target=blink_led, args=(True,), daemon=True).start()
+        elif distance < 500:
             print("Distance < 500 miles")
             if not blinking:
                 blinking = True
