@@ -50,8 +50,8 @@ lines.set_values([1])     # blue LED on
 # Function to check if it's nighttime
 def is_nighttime():
     current_time = datetime.datetime.now().time()
-    # Define nighttime as between 10:00 PM and 5:00 AM
-    night_start = datetime.time(22, 0)  # 10:00 PM
+    # Define nighttime as between 11:00 PM and 5:00 AM
+    night_start = datetime.time(23, 0)  # 11:00 PM
     night_end = datetime.time(5, 0)    # 5:00 AM
 
     # Check if the current time is within the nighttime range
@@ -64,9 +64,9 @@ def blink_led(fast=False):
     global blinking
     while blinking:
         lines.set_values([1])  # Turn on LED
-        time.sleep(0.2 if fast else 0.5)  # Faster blink if fast=True
+        time.sleep(0.2 if fast else 1)  # Faster blink if fast=True
         lines.set_values([0])  # Turn off LED
-        time.sleep(0.2 if fast else 0.5)  # Faster blink if fast=True
+        time.sleep(0.2 if fast else 1)  # Faster blink if fast=True
 
 def control_led_based_on_distance():
     global blinking
@@ -90,29 +90,30 @@ def control_led_based_on_distance():
         # Get the distance from the ISS to city
         # geodesic returns distance in miles between two points
         distance = geodesic(iss, city).miles
+        # distance = 400  # For testing
 
         cleaned_address = getLoc.address.replace(", United States", "").strip()
         print('Distance from ISS to ', cleaned_address, ':', 
               int(distance), 'miles, ', int(distance*1.60934), 'km')
 
         # Check the distance and control the LED
-        if distance < 250:
-            print("Distance < 250 miles")
-            if not blinking:
-                blinking = True
-                threading.Thread(target=blink_led, args=(True,), daemon=True).start()
-        elif distance < 500:
+        if distance < 500:
             print("Distance < 500 miles")
             if not blinking:
                 blinking = True
-                threading.Thread(target=blink_led, daemon=True).start()
+                threading.Thread(target=blink_led, args=(True,), daemon=True).start()
         elif distance < 1000:
+            print("Distance < 1000 miles")
+            if not blinking:
+                blinking = True
+                threading.Thread(target=blink_led, daemon=True).start()
+        elif distance < 2000:
             blinking = False  # Stop blinking
-            print("Distance < 1000 miles")  # On steady
+            print("Distance < 2000 miles")  # On steady
             lines.set_values([1])
         else:
             blinking = False  # Stop blinking
-            print("Distance > 1000 miles")
+            print("Distance > 2000 miles")
             lines.set_values([0])
 
     except Exception as err:
