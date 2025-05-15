@@ -97,23 +97,23 @@ def control_led_based_on_distance():
               int(distance), 'miles, ', int(distance*1.60934), 'km')
 
         # Check the distance and control the LED
-        if distance < 500:
-            print("Distance < 500 miles")
+        if distance < 750:
+            print("Distance < 750 miles")
             if not blinking:
                 blinking = True
                 threading.Thread(target=blink_led, args=(True,), daemon=True).start()
-        elif distance < 1000:
-            print("Distance < 1000 miles")
+        elif distance < 1500:
+            print("Distance < 1500 miles")
             if not blinking:
                 blinking = True
                 threading.Thread(target=blink_led, daemon=True).start()
-        elif distance < 2000:
+        elif distance < 2500:
             blinking = False  # Stop blinking
-            print("Distance < 2000 miles")  # On steady
+            print("Distance < 2500 miles")  # On steady
             lines.set_values([1])
         else:
             blinking = False  # Stop blinking
-            print("Distance > 2000 miles")
+            print("Distance > 2500 miles")
             lines.set_values([0])
 
     except Exception as err:
