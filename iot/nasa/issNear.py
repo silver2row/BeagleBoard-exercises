@@ -59,9 +59,11 @@ def is_nighttime():
 
 # Global variable to control the blinking thread
 blinking = False
+fast     = False    # Function to blink the LED fast
 
-def blink_led(fast=False):
-    global blinking
+def blink_led():
+    global blinking, fast
+
     while blinking:
         lines.set_values([1])  # Turn on LED
         time.sleep(0.2 if fast else 1)  # Faster blink if fast=True
@@ -69,7 +71,8 @@ def blink_led(fast=False):
         time.sleep(0.2 if fast else 1)  # Faster blink if fast=True
 
 def control_led_based_on_distance():
-    global blinking
+    global blinking, fast
+    
     try:
         # Check if it's nighttime
         if is_nighttime():
@@ -99,11 +102,13 @@ def control_led_based_on_distance():
         # Check the distance and control the LED
         if distance < 750:
             print("Distance < 750 miles")
+            fast = True  # Set fast blinking
             if not blinking:
                 blinking = True
-                threading.Thread(target=blink_led, args=(True,), daemon=True).start()
+                threading.Thread(target=blink_led, daemon=True).start()
         elif distance < 1500:
             print("Distance < 1500 miles")
+            fast = False
             if not blinking:
                 blinking = True
                 threading.Thread(target=blink_led, daemon=True).start()
