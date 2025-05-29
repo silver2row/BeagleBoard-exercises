@@ -2,7 +2,7 @@
 # Usage: issNear.py [address]
 # This program will turn on the blue LED if the ISS is within 1000 miles of the given address.
 # From: https://codeclubprojects.org/en-GB/python/iss/
-# pip install geopy
+# sudo apt install python3-geopy
 import gpiod
 import json
 import urllib.request
@@ -32,6 +32,7 @@ if getLoc is None:
 
 print("Address found: ", getLoc.address)
 city = (getLoc.latitude, getLoc.longitude)
+print("City coordinates: ", city)
 
 url = 'http://api.open-notify.org/iss-now.json'
 
