@@ -22,13 +22,17 @@ file_handler = RotatingFileHandler(
     encoding='utf-8'
 )
 
+# Create console handler that only shows WARNING and ERROR
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
         file_handler,
-        logging.StreamHandler()  # This will maintain console output
+        console_handler
     ]
 )
 logger = logging.getLogger(__name__)
