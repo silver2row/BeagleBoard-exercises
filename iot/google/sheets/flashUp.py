@@ -51,6 +51,11 @@ chip = gpiod.Chip(LED_CHIP)
 lines = chip.get_lines(LED_LINE_OFFSET)
 lines.request(consumer='flashup.py', type=gpiod.LINE_REQ_DIR_OUT)
 
+def is_nighttime():
+    """Check if current time is outside operating hours (5:00-21:00)"""
+    hour = dt.datetime.now().hour
+    return hour <= 5 or hour >= 21
+
 # Turn all LEDs off
 def allOff():
     logger.info("Turning all LEDs off")
@@ -72,8 +77,10 @@ logger.info("Starting ping monitoring")
 
 try:
     while True:
-        hour=dt.datetime.now().hour
-        if hour>5 and hour<21:
+        if is_nighttime():
+            logger.info('Outside operating hours (5:00-21:00), turning off LEDs')
+            allOff()
+        else:
             try:
                 # returns output as byte string
                 returned_output = subprocess.check_output(pingCmd, stderr=subprocess.STDOUT).decode("utf-8")
@@ -97,10 +104,6 @@ try:
                 logger.error('Ping failed: %s', err)
                 lines.set_values([1, 0, 0])#        # red
 
-                
-        else:
-            logger.info('Outside operating hours (5:00-21:00), turning off LEDs')
-            allOff()
         time.sleep(ms/1000)
 
 except Exception as e:
