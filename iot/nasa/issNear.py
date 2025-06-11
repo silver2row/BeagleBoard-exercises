@@ -18,15 +18,25 @@ from geopy.distance  import geodesic
 import sys
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        RotatingFileHandler('iss_tracker.log', maxBytes=1024*1024, backupCount=5),
-        logging.StreamHandler()
-    ]
-)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create handlers
+file_handler = RotatingFileHandler('iss_tracker.log', maxBytes=1024*1024, backupCount=5)
+console_handler = logging.StreamHandler()
+
+# Set levels
+file_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.WARNING)
+
+# Create formatters and add it to handlers
+log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(log_format)
+console_handler.setFormatter(log_format)
+
+# Add handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 # calling the Nominatim tool and create Nominatim class
 loc = Nominatim(user_agent="Geopy Library")
@@ -43,9 +53,9 @@ if getLoc is None:
     logger.error(f"Unable to find location for address '{address}'. Please provide a valid address.")
     sys.exit(1)  # Exit the program with an error code
 
-logger.info(f"Address found: {getLoc.address}")
+print(f"Address found: {getLoc.address}")
 city = (getLoc.latitude, getLoc.longitude)
-print("City coordinates: ", city)
+logger.info(f"City coordinates: {city}")
 
 url = 'http://api.open-notify.org/iss-now.json'
 
