@@ -1,6 +1,9 @@
 # This is for using the si 7021 on the iio interface
 # I'm using a si7021, but here we say si7020
 
+config-pin P9_24 i2c
+config-pin P9_26 i2c
+
 BUS=i2c-1
 ADDR=0x40
 DEV=si7020
@@ -15,5 +18,6 @@ temp=`cat in_temp_raw`
 echo $(( temp/100 ))
 
 # Print humidity
-humid=`cat in_humidityrelative_raw`
-echo $(( humid/100 ))
+in_humidityrelative_raw=$(cat in_humidityrelative_raw)
+echo "$in_humidityrelative_raw"
+
