@@ -6,15 +6,16 @@
 </head>
 <body>
   <h1>Temperature and Humidity (Past & Future 24h)</h1>
-  <canvas id="tempChart"></canvas>
-  <canvas id="humidChart"></canvas>
+  <div style="width: 50vw;">
+    <canvas id="comboChart"></canvas>
+  </div>
   <script>
     async function fetchData(url) {
       const res = await fetch(url);
       return res.json();
     }
 
-    async function drawCharts() {
+    async function drawComboChart() {
       const history = await fetchData('/api/history');
       const forecast = await fetchData('/api/forecast');
 
@@ -26,33 +27,57 @@
       const foreTemps = forecast.map(d => d.temperature);
       const foreHumids = forecast.map(d => d.humidity);
 
-      new Chart(document.getElementById('tempChart'), {
-        type: 'line',
-        data: {
-          labels: histLabels.concat(foreLabels),
-          datasets: [{
-            label: 'Temperature (°C)',
-            data: histTemps.concat(foreTemps),
-            borderColor: 'red',
-            fill: false
-          }]
-        }
-      });
+      const labels = histLabels.concat(foreLabels);
+      const temps = histTemps.concat(foreTemps);
+      const humids = histHumids.concat(foreHumids);
 
-      new Chart(document.getElementById('humidChart'), {
+      new Chart(document.getElementById('comboChart'), {
         type: 'line',
         data: {
-          labels: histLabels.concat(foreLabels),
-          datasets: [{
-            label: 'Humidity (%)',
-            data: histHumids.concat(foreHumids),
-            borderColor: 'blue',
-            fill: false
-          }]
+          labels: labels,
+          datasets: [
+            {
+              label: 'Temperature (°F)',
+              data: temps,
+              borderColor: 'red',
+              yAxisID: 'y',
+              fill: false
+            },
+            {
+              label: 'Humidity (%)',
+              data: humids,
+              borderColor: 'blue',
+              yAxisID: 'y1',
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          stacked: false,
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: { display: true, text: 'Temperature (°F)' }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: { display: true, text: 'Humidity (%)' },
+              grid: { drawOnChartArea: false }
+            }
+          }
         }
       });
     }
-    drawCharts();
+    drawComboChart();
   </script>
 </body>
 </html> 
