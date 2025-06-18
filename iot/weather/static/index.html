@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Temperature and Humidity (Past & Future 24h)</h1>
+  <canvas id="tempChart"></canvas>
+  <canvas id="humidChart"></canvas>
+  <script>
+    async function fetchData(url) {
+      const res = await fetch(url);
+      return res.json();
+    }
+
+    async function drawCharts() {
+      const history = await fetchData('/api/history');
+      const forecast = await fetchData('/api/forecast');
+
+      const histLabels = history.map(d => d.timestamp);
+      const histTemps = history.map(d => d.temperature);
+      const histHumids = history.map(d => d.humidity);
+
+      const foreLabels = forecast.map(d => d.timestamp);
+      const foreTemps = forecast.map(d => d.temperature);
+      const foreHumids = forecast.map(d => d.humidity);
+
+      new Chart(document.getElementById('tempChart'), {
+        type: 'line',
+        data: {
+          labels: histLabels.concat(foreLabels),
+          datasets: [{
+            label: 'Temperature (°C)',
+            data: histTemps.concat(foreTemps),
+            borderColor: 'red',
+            fill: false
+          }]
+        }
+      });
+
+      new Chart(document.getElementById('humidChart'), {
+        type: 'line',
+        data: {
+          labels: histLabels.concat(foreLabels),
+          datasets: [{
+            label: 'Humidity (%)',
+            data: histHumids.concat(foreHumids),
+            borderColor: 'blue',
+            fill: false
+          }]
+        }
+      });
+    }
+    drawCharts();
+  </script>
+</body>
+</html> 
