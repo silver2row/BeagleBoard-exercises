@@ -3,6 +3,7 @@
 <head>
   <title>Weather Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
 <body>
   <h1>Temperature and Humidity (Past & Future 24h)</h1>
@@ -27,9 +28,21 @@
       const foreTemps = forecast.map(d => d.temperature);
       const foreHumids = forecast.map(d => d.humidity);
 
-      const labels = histLabels.concat(foreLabels);
+      const labels = histLabels.concat(foreLabels).map(label => {
+        const date = new Date(label);
+        return date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      });
+      console.log(labels);
       const temps = histTemps.concat(foreTemps);
       const humids = histHumids.concat(foreHumids);
+
+      const now = new Date();
+      const nowISO = now.toISOString().slice(0, 19); // match your label format
 
       new Chart(document.getElementById('comboChart'), {
         type: 'line',
@@ -72,6 +85,24 @@
               position: 'right',
               title: { display: true, text: 'Temperature (°F)' },
               grid: { drawOnChartArea: false }
+            }
+          },
+          plugins: {
+            annotation: {
+              annotations: {
+                currentTimeLine: {
+                  type: 'line',
+                  xMin: nowISO,
+                  xMax: nowISO,
+                  borderColor: 'green',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Now',
+                    enabled: true,
+                    position: 'start'
+                  }
+                }
+              }
             }
           }
         }
