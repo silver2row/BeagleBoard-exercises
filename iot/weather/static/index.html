@@ -40,14 +40,14 @@
               label: 'Temperature (°F)',
               data: temps,
               borderColor: 'red',
-              yAxisID: 'y',
+              yAxisID: 'y1',
               fill: false
             },
             {
               label: 'Humidity (%)',
               data: humids,
               borderColor: 'blue',
-              yAxisID: 'y1',
+              yAxisID: 'y',
               fill: false
             }
           ]
@@ -64,13 +64,13 @@
               type: 'linear',
               display: true,
               position: 'left',
-              title: { display: true, text: 'Temperature (°F)' }
+              title: { display: true, text: 'Humidity (%)' }
             },
             y1: {
               type: 'linear',
               display: true,
               position: 'right',
-              title: { display: true, text: 'Humidity (%)' },
+              title: { display: true, text: 'Temperature (°F)' },
               grid: { drawOnChartArea: false }
             }
           }
