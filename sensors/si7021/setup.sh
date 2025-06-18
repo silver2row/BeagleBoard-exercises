@@ -1,5 +1,6 @@
 # This is for using the si 7021 on the iio interface
 # I'm using a si7021, but here we say si7020
+# Need to use scale and offset to get the correct values
 
 config-pin P9_24 i2c
 config-pin P9_26 i2c
@@ -20,4 +21,3 @@ echo $(( temp/100 ))
 # Print humidity
 in_humidityrelative_raw=$(cat in_humidityrelative_raw)
 echo "$in_humidityrelative_raw"
-
