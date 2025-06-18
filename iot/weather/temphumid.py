@@ -15,6 +15,8 @@ app = Flask(__name__)
 DB = "sensor_data.db"
 import os
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")  # <-- Set your API key in the environment variable
+if not OPENWEATHER_API_KEY:
+    raise RuntimeError("Missing OPENWEATHER_API_KEY environment variable. Please set it before running the application.")
 LOCATION = "Brazil, Indiana"  # <-- Replace with your city
 
 @app.route("/api/history")
