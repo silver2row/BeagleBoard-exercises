@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Prints the temperature and humidity for s si7021 using the iio interface
 # Be sure to run setup.sh first
+# These are the wrong values, you need to add the scale and offset
 
 BUS="i2c-1"
 ADDR="0x40"
