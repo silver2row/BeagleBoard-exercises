@@ -16,19 +16,10 @@
     }
 
     async function drawComboChart() {
-      const history = await fetchData('/api/history');
       const forecast = await fetchData('/api/forecast');
 
-      const histLabels = history.map(d => d.timestamp);
-      const histTemps = history.map(d => d.temperature);
-      const histHumids = history.map(d => d.humidity);
-
-      const foreLabels = forecast.map(d => d.timestamp);
-      const foreTemps = forecast.map(d => d.temperature);
-      const foreHumids = forecast.map(d => d.humidity);
-
-      const labels = histLabels.concat(foreLabels).map(label => {
-        const date = new Date(label);
+      const foreLabels = forecast.map(d => {
+        const date = new Date(d.timestamp);
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleString('en-US', { month: 'short' });
         let hour = date.getHours();
@@ -38,9 +29,25 @@
         const minute = date.getMinutes().toString().padStart(2, '0');
         return `${day}-${month} ${hour}:${minute} ${ampm}`;
       });
-      // console.log(labels);
-      const temps = histTemps.concat(foreTemps);
-      const humids = histHumids.concat(foreHumids);
+      const foreTemps = forecast.map(d => d.temperature);
+      const foreHumids = forecast.map(d => d.humidity);
+
+      const datasets = [
+        {
+          label: 'Temperature - Forecast',
+          data: foreTemps,
+          borderColor: 'red',
+          yAxisID: 'y1',
+          fill: false
+        },
+        {
+          label: 'Humidity - Forecast',
+          data: foreHumids,
+          borderColor: 'blue',
+          yAxisID: 'y',
+          fill: false
+        }
+      ];
 
       const now = new Date();
       const nowISO = now.toISOString().slice(0, 19); // match your label format
@@ -48,23 +55,8 @@
       new Chart(document.getElementById('comboChart'), {
         type: 'line',
         data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Temperature (°F)',
-              data: temps,
-              borderColor: 'red',
-              yAxisID: 'y1',
-              fill: false
-            },
-            {
-              label: 'Humidity (%)',
-              data: humids,
-              borderColor: 'blue',
-              yAxisID: 'y',
-              fill: false
-            }
-          ]
+          labels: foreLabels,
+          datasets: datasets
         },
         options: {
           responsive: true,
