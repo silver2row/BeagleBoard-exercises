@@ -3,7 +3,6 @@
 <head>
   <title>Weather Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
 <body>
   <h1>Temperature and Humidity (Past & Future 24h)</h1>
@@ -39,7 +38,7 @@
         const minute = date.getMinutes().toString().padStart(2, '0');
         return `${day}-${month} ${hour}:${minute} ${ampm}`;
       });
-      console.log(labels);
+      // console.log(labels);
       const temps = histTemps.concat(foreTemps);
       const humids = histHumids.concat(foreHumids);
 
@@ -87,24 +86,6 @@
               position: 'right',
               title: { display: true, text: 'Temperature (°F)' },
               grid: { drawOnChartArea: false }
-            }
-          },
-          plugins: {
-            annotation: {
-              annotations: {
-                currentTimeLine: {
-                  type: 'line',
-                  xMin: nowISO,
-                  xMax: nowISO,
-                  borderColor: 'green',
-                  borderWidth: 2,
-                  label: {
-                    content: 'Now',
-                    enabled: true,
-                    position: 'start'
-                  }
-                }
-              }
             }
           }
         }
