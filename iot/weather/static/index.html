@@ -3,6 +3,7 @@
 <head>
   <title>Weather Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
 <body>
   <h1>Temperature and Humidity (Past & Future 24h)</h1>
@@ -32,32 +33,41 @@
       const foreTemps = forecast.map(d => d.temperature);
       const foreHumids = forecast.map(d => d.humidity);
 
+      const shiftedLabels = foreLabels.slice(0, -1);
+      const shiftedTemps = foreTemps.slice(1);
+      const shiftedHumids = foreHumids.slice(1);
+
       const datasets = [
         {
           label: 'Temperature - Forecast',
-          data: foreTemps,
+          data: shiftedTemps,
           borderColor: 'red',
           yAxisID: 'y1',
           fill: false,
-          tension: 0.2
+          tension: 0.4
         },
         {
           label: 'Humidity - Forecast',
-          data: foreHumids,
+          data: shiftedHumids,
           borderColor: 'blue',
           yAxisID: 'y',
           fill: false,
-          tension: 0.2
+          tension: 0.4
         }
       ];
 
       const now = new Date();
       const nowISO = now.toISOString().slice(0, 19); // match your label format
 
+      // Find the index of the first label at midnight
+      const midnightIndex = foreLabels.findIndex(label => label.endsWith("12:00 am"));
+      const highlightStart = foreLabels[midnightIndex];
+      const highlightEnd = foreLabels[midnightIndex + 8]; // 24 hours later
+
       new Chart(document.getElementById('comboChart'), {
         type: 'line',
         data: {
-          labels: foreLabels,
+          labels: shiftedLabels,
           datasets: datasets
         },
         options: {
@@ -80,6 +90,19 @@
               position: 'right',
               title: { display: true, text: 'Temperature (°F)' },
               grid: { drawOnChartArea: false }
+            }
+          },
+          plugins: {
+            annotation: {
+              annotations: {
+                highlightDay: {
+                  type: 'box',
+                  xMin: highlightStart,
+                  xMax: highlightEnd,
+                  backgroundColor: 'rgba(255, 206, 86, 0.2)', // light yellow
+                  borderWidth: 0
+                }
+              }
             }
           }
         }
