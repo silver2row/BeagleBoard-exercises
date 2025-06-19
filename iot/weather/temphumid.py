@@ -21,13 +21,11 @@ def forecast():
     url = f"https://api.openweathermap.org/data/2.5/forecast?q={LOCATION}&appid={OPENWEATHER_API_KEY}&units=imperial"
     r = requests.get(url)
     data = r.json()
-    # Extract next 24 hours (8*3=24, as data is every 3 hours)
     forecast_data = []
-    for entry in data.get("list", [])[:8]:
-        temp_f = entry["main"]["temp"]
+    for entry in data.get("list", [])[:16]:  # 16 x 3 hours = 48 hours
         forecast_data.append({
             "timestamp": entry["dt_txt"],
-            "temperature": temp_f,
+            "temperature": entry["main"]["temp"],
             "humidity": entry["main"]["humidity"]
         })
     return jsonify(forecast_data)
