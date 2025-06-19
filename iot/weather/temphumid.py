@@ -18,14 +18,13 @@ LOCATION = "Brazil, Indiana"  # <-- Replace with your city
 
 @app.route("/api/forecast")
 def forecast():
-    url = f"https://api.openweathermap.org/data/2.5/forecast?q={LOCATION}&appid={OPENWEATHER_API_KEY}&units=metric"
+    url = f"https://api.openweathermap.org/data/2.5/forecast?q={LOCATION}&appid={OPENWEATHER_API_KEY}&units=imperial"
     r = requests.get(url)
     data = r.json()
     # Extract next 24 hours (8*3=24, as data is every 3 hours)
     forecast_data = []
     for entry in data.get("list", [])[:8]:
-        temp_c = entry["main"]["temp"]
-        temp_f = temp_c * 9.0 / 5.0 + 32.0
+        temp_f = entry["main"]["temp"]
         forecast_data.append({
             "timestamp": entry["dt_txt"],
             "temperature": temp_f,
