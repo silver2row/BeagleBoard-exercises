@@ -6,7 +6,7 @@ import multiprocessing
 
 # Load dictionary from the system word list.
 # Only include words that are purely alphabetic (no hyphens, apostrophes, etc.) and convert them to uppercase for uniformity.
-with open('/usr/share/dict/words') as f:
+with open('Collins Scrabble Words (2019).txt') as f:
     WORDS = set(word.strip().upper() for word in f if word.strip().isalpha())
 
 # Build a set of all valid prefixes from the dictionary for early pruning
@@ -174,27 +174,67 @@ def print_grid(grid):
     for row in grid:
         print(' '.join(row))
 
+# Helper for multiprocessing: solve for a specific grid size
 def solve_for_size(args):
     letters, size = args
     grid = solve(letters, size)
     return (size, grid)
 
-# Main entry point
+# Interactive mode: prompt user to add one letter at a time and show the grid after each addition, using multicore solving
+def interactive_mode():
+    print("Interactive Bananagrams mode. Enter one letter at a time. Type 'quit' to exit.")
+    letters = []
+    while True:
+        print(f"Current letters: {''.join(letters)}")
+        inp = input("Enter a letter (or 'quit' to finish): ").strip().upper()
+        if inp == 'QUIT':
+            print("Exiting interactive mode.")
+            break
+        if len(inp) != 1 or not inp.isalpha():
+            print("Please enter a single alphabetic letter.")
+            continue
+        letters.append(inp)
+        n = len(letters)
+        import math
+        min_size = int(math.ceil(n ** 0.5))
+        sizes = list(range(min_size, n+1))
+        found = False
+        try:
+            with multiprocessing.Pool() as pool:
+                for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
+                    if grid:
+                        print("Possible grid:")
+                        print_grid(grid)
+                        found = True
+                        break
+            if not found:
+                print("No valid Bananagram could be formed with the given letters.")
+        except KeyboardInterrupt:
+            # Allow user to interrupt a long solve and continue
+            print("\nSolve interrupted. You can enter another letter or 'quit' to exit.")
+            continue
+
+# Main entry point: choose batch or interactive mode, both using multicore solving
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python bananagram.py LETTERS")
-        sys.exit(1)
-    letters = sys.argv[1].upper()
-    n = len(letters)
-    import math
-    min_size = int(math.ceil(n ** 0.5))
-    sizes = list(range(min_size, n+1))
-    with multiprocessing.Pool() as pool:
-        for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
-            if grid:
-                print_grid(grid)
-                return
-    print("No valid Bananagram could be formed with the given letters.")
+    if len(sys.argv) == 2:
+        # Batch mode: all letters at once, use multicore
+        letters = sys.argv[1].upper()
+        n = len(letters)
+        import math
+        min_size = int(math.ceil(n ** 0.5))
+        sizes = list(range(min_size, n+1))
+        found = False
+        with multiprocessing.Pool() as pool:
+            for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
+                if grid:
+                    print_grid(grid)
+                    found = True
+                    break
+        if not found:
+            print("No valid Bananagram could be formed with the given letters.")
+    else:
+        # Interactive mode
+        interactive_mode()
 
 if __name__ == "__main__":
     main() 
