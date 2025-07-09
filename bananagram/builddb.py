@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS anagrams (
 )
 ''')
 
-# Create an index on the sorted_letters column
+# Create an index on sorted_letters for fast lookups
 c.execute('CREATE INDEX IF NOT EXISTS idx_sorted_letters ON anagrams(sorted_letters)')
 
 # Read the dictionary and insert each word with its sorted letters
@@ -41,4 +41,4 @@ with open(DICT_FILE) as f:
 conn.commit()
 conn.close()
 
-print(f"Database '{DB_FILE}' built from '{DICT_FILE}'.") 
+print(f"Database '{DB_FILE}' built from '{DICT_FILE}' with index on sorted_letters.") 
