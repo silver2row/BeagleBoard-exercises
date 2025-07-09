@@ -57,6 +57,83 @@ def can_place_word(grid, word, row, col, direction):
                 return False
         return True
 
+# Check if a word placement connects to existing words (required for Bananagrams)
+def is_word_connected(grid, word, row, col, direction):
+    """Check if a word placement connects to existing words on the grid"""
+    size = len(grid)
+    
+    if direction == 'across':
+        # Check if any letter in the word connects to existing letters
+        for i, c in enumerate(word):
+            r, c_pos = row, col + i
+            
+            # Check adjacent cells (up, down, left, right)
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = r + dr, c_pos + dc
+                if 0 <= nr < size and 0 <= nc < size and grid[nr][nc] != '.':
+                    return True
+            
+            # Check if this position already has a letter (crossing)
+            if grid[r][c_pos] != '.':
+                return True
+    else:
+        # Check if any letter in the word connects to existing letters
+        for i, c in enumerate(word):
+            r, c_pos = row + i, col
+            
+            # Check adjacent cells (up, down, left, right)
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = r + dr, c_pos + dc
+                if 0 <= nr < size and 0 <= nc < size and grid[nr][nc] != '.':
+                    return True
+            
+            # Check if this position already has a letter (crossing)
+            if grid[r][c_pos] != '.':
+                return True
+    
+    return False
+
+# Check if the grid has any isolated words (not connected to the main grid)
+def is_grid_connected(grid):
+    """Check if all words in the grid are connected to form a single crossword"""
+    size = len(grid)
+    if size == 0:
+        return True
+    
+    # Find the first letter in the grid
+    start_pos = None
+    for r in range(size):
+        for c in range(size):
+            if grid[r][c] != '.':
+                start_pos = (r, c)
+                break
+        if start_pos:
+            break
+    
+    if not start_pos:
+        return True  # Empty grid is considered connected
+    
+    # Use flood fill to mark all connected letters
+    visited = set()
+    stack = [start_pos]
+    
+    while stack:
+        r, c = stack.pop()
+        if (r, c) in visited or grid[r][c] == '.':
+            continue
+        
+        visited.add((r, c))
+        
+        # Add adjacent letters to the stack
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < size and 0 <= nc < size and grid[nr][nc] != '.':
+                stack.append((nr, nc))
+    
+    # Check if all letters are visited (connected)
+    total_letters = sum(1 for r in range(size) for c in range(size) if grid[r][c] != '.')
+    return len(visited) == total_letters
+
 # Place a word on the grid and return a new grid (does not modify the original)
 def place_word(grid, word, row, col, direction):
     new_grid = [list(r) for r in grid]  # Deep copy of the grid
@@ -146,11 +223,15 @@ def solve(letters, size, grid=None):
     for c in used:
         if c in remaining:
             remaining.remove(c)
-    # If all letters are used, check if the grid is valid
+    # If all letters are used, check if the grid is valid and connected
     if not remaining:
-        if is_grid_valid(grid):
+        if is_grid_valid(grid) and is_grid_connected(grid):
             return grid
         return None
+    
+    # Check if this is the first word (no letters used yet)
+    is_first_word = len(used) == 0
+    
     # Try to place a word using the remaining letters
     words = get_all_words(remaining)
     # Try longer words first for efficiency
@@ -160,6 +241,11 @@ def solve(letters, size, grid=None):
             for c in range(size):
                 for direction in ['across', 'down']:
                     if can_place_word(grid, word, r, c, direction):
+                        # For Bananagrams: first word can be placed anywhere,
+                        # subsequent words must connect to existing words
+                        if not is_first_word and not is_word_connected(grid, word, r, c, direction):
+                            continue
+                        
                         new_grid = place_word(grid, word, r, c, direction)
                         # Early pruning: check if the grid is still potentially valid
                         if not is_grid_partial_valid(new_grid):
