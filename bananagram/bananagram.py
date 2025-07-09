@@ -269,6 +269,7 @@ def solve_for_size(args):
 # Interactive mode: prompt user to add one letter at a time and show the grid after each addition, using multicore solving
 def interactive_mode():
     print("Interactive Bananagrams mode. Enter one letter at a time. Type 'quit' to exit.")
+    print("Solver will timeout after 30 seconds if no solution is found.")
     letters = []
     while True:
         print(f"Current letters: {''.join(letters)}")
@@ -286,15 +287,46 @@ def interactive_mode():
         sizes = list(range(min_size, n+1))
         found = False
         try:
+            import time
+            start_time = time.time()
+            timeout_seconds = 30  # 30 second timeout
+            
             with multiprocessing.Pool() as pool:
-                for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
-                    if grid:
-                        print("Possible grid:")
-                        print_grid(grid)
-                        found = True
+                # Submit all sizes for parallel processing
+                futures = {pool.apply_async(solve_for_size, [(letters, s)]): s for s in sizes}
+                
+                # Check for completion with timeout
+                for future in futures:
+                    try:
+                        # Wait for result with timeout
+                        remaining_time = max(0, timeout_seconds - (time.time() - start_time))
+                        if remaining_time <= 0:
+                            print(f"\nSolver timed out after {timeout_seconds} seconds.")
+                            print("Try adding a different letter or fewer letters.")
+                            break
+                        
+                        size, grid = future.get(timeout=remaining_time)
+                        if grid:
+                            print("Possible grid:")
+                            print_grid(grid)
+                            found = True
+                            break
+                    except multiprocessing.TimeoutError:
+                        print(f"\nSolver timed out after {timeout_seconds} seconds.")
+                        print("Try adding a different letter or fewer letters.")
                         break
+                    except Exception as e:
+                        print(f"Error during solving: {e}")
+                        continue
+            
             if not found:
-                print("No valid Bananagram could be formed with the given letters.")
+                elapsed = time.time() - start_time
+                if elapsed >= timeout_seconds:
+                    print(f"No solution found within {timeout_seconds} seconds.")
+                    print("Try adding a different letter or fewer letters.")
+                else:
+                    print("No valid Bananagram could be formed with the given letters.")
+                    
         except KeyboardInterrupt:
             # Allow user to interrupt a long solve and continue
             print("\nSolve interrupted. You can enter another letter or 'quit' to exit.")
