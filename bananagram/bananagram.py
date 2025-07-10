@@ -3,36 +3,69 @@ import sys
 import itertools
 from collections import Counter
 import multiprocessing
+import sqlite3
 
-# Load dictionary from the system word list.
-# Only include words that are purely alphabetic (no hyphens, apostrophes, etc.) and convert them to uppercase for uniformity.
-with open('Collins Scrabble Words (2019).txt') as f:
-    WORDS = set(word.strip().upper() for word in f if word.strip().isalpha())
+# Database file path
+DB_FILE = 'words.db'
 
-# Build a set of all valid prefixes from the dictionary for early pruning
-PREFIXES = set()
-for word in WORDS:
-    for i in range(2, len(word)+1):  # Only prefixes of length >=2
-        PREFIXES.add(word[:i])
+# Global database connection (will be initialized when needed)
+db_conn = None
+
+def get_db_connection():
+    """Get a database connection, creating it if needed"""
+    global db_conn
+    if db_conn is None:
+        db_conn = sqlite3.connect(DB_FILE)
+    return db_conn
+
+def close_db_connection():
+    """Close the database connection"""
+    global db_conn
+    if db_conn:
+        db_conn.close()
+        db_conn = None
 
 # Check if a word is valid (exists in the dictionary)
 def is_valid_word(word):
-    return word in WORDS
+    conn = get_db_connection()
+    c = conn.cursor()
+    sorted_letters = ''.join(sorted(word.upper()))
+    c.execute('SELECT word FROM anagrams WHERE sorted_letters = ? AND word = ?', 
+             (sorted_letters, word.upper()))
+    result = c.fetchone()
+    return result is not None
 
 # Check if a string is a valid prefix of any word in the dictionary
 def is_valid_prefix(prefix):
-    return prefix in PREFIXES
+    conn = get_db_connection()
+    c = conn.cursor()
+    # Check if there are any words that start with this prefix
+    c.execute('SELECT word FROM anagrams WHERE word LIKE ? LIMIT 1', (prefix.upper() + '%',))
+    result = c.fetchone()
+    return result is not None
 
 # Generate all valid words that can be made from the given letters
 def get_all_words(letters):
-    letter_counts = Counter(letters)  # Count available letters
-    valid_words = set()
-    for word in WORDS:
-        wc = Counter(word)
-        # Only include the word if it can be formed from the available letters
-        if all(wc[c] <= letter_counts[c] for c in wc):
-            valid_words.add(word)
-    return valid_words
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # Generate all possible sorted letter combinations
+    letter_combos = set()
+    for length in range(1, len(letters) + 1):
+        for combo in itertools.combinations(letters, length):
+            sorted_combo = ''.join(sorted(combo))
+            letter_combos.add(sorted_combo)
+    
+    # Query database for all valid words
+    if not letter_combos:
+        return set()
+    
+    placeholders = ','.join('?' for _ in letter_combos)
+    query = f'SELECT word FROM anagrams WHERE sorted_letters IN ({placeholders})'
+    c.execute(query, list(letter_combos))
+    
+    words = {row[0] for row in c.fetchall()}
+    return words
 
 # Check if a word can be placed at a given position in the grid
 def can_place_word(grid, word, row, col, direction):
@@ -268,28 +301,34 @@ def solve_for_size(args):
 
 # Interactive mode: prompt user to add one letter at a time and show the grid after each addition, using multicore solving
 def interactive_mode():
-    print("Interactive Bananagrams mode. Enter one letter at a time. Type 'quit' to exit.")
-    print("Solver will timeout after 30 seconds if no solution is found.")
+    print("Interactive Bananagrams mode. Enter letters (single or multiple). Type 'quit' to exit.")
+    print("Solver will timeout after 60 seconds if no solution is found.")
     letters = []
     while True:
         print(f"Current letters: {''.join(letters)}")
-        inp = input("Enter a letter (or 'quit' to finish): ").strip().upper()
+        inp = input("Enter letter(s) (or 'quit' to finish): ").strip().upper()
         if inp == 'QUIT':
             print("Exiting interactive mode.")
             break
-        if len(inp) != 1 or not inp.isalpha():
-            print("Please enter a single alphabetic letter.")
+        if not inp.isalpha():
+            print("Please enter alphabetic letters only.")
             continue
-        letters.append(inp)
+        
+        # Add all letters from the input
+        new_letters = list(inp)
+        letters.extend(new_letters)
+        print(f"Added letters: {', '.join(new_letters)}")
+        
         n = len(letters)
         import math
         min_size = int(math.ceil(n ** 0.5))
-        sizes = list(range(min_size, n+1))
+        # Try from maximum size down to minimum for better success rate
+        sizes = list(range(n, min_size - 1, -1))
         found = False
         try:
             import time
             start_time = time.time()
-            timeout_seconds = 30  # 30 second timeout
+            timeout_seconds = 60  # 60 second timeout
             
             with multiprocessing.Pool() as pool:
                 # Submit all sizes for parallel processing
@@ -334,25 +373,30 @@ def interactive_mode():
 
 # Main entry point: choose batch or interactive mode, both using multicore solving
 def main():
-    if len(sys.argv) == 2:
-        # Batch mode: all letters at once, use multicore
-        letters = sys.argv[1].upper()
-        n = len(letters)
-        import math
-        min_size = int(math.ceil(n ** 0.5))
-        sizes = list(range(min_size, n+1))
-        found = False
-        with multiprocessing.Pool() as pool:
-            for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
-                if grid:
-                    print_grid(grid)
-                    found = True
-                    break
-        if not found:
-            print("No valid Bananagram could be formed with the given letters.")
-    else:
-        # Interactive mode
-        interactive_mode()
+    try:
+        if len(sys.argv) == 2:
+            # Batch mode: all letters at once, use multicore
+            letters = sys.argv[1].upper()
+            n = len(letters)
+            import math
+            min_size = int(math.ceil(n ** 0.5))
+            # Try from maximum size down to minimum for better success rate
+            sizes = list(range(n, min_size - 1, -1))
+            found = False
+            with multiprocessing.Pool() as pool:
+                for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
+                    if grid:
+                        print_grid(grid)
+                        found = True
+                        break
+            if not found:
+                print("No valid Bananagram could be formed with the given letters.")
+        else:
+            # Interactive mode
+            interactive_mode()
+    finally:
+        # Always close the database connection
+        close_db_connection()
 
 if __name__ == "__main__":
     main() 
