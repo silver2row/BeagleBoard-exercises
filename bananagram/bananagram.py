@@ -346,6 +346,8 @@ def interactive_mode():
                         
                         size, grid = future.get(timeout=remaining_time)
                         if grid:
+                            elapsed = time.time() - start_time
+                            print(f"Solution found in {elapsed:.2f} seconds:")
                             print("Possible grid:")
                             print_grid(grid)
                             found = True
@@ -383,14 +385,23 @@ def main():
             # Try from maximum size down to minimum for better success rate
             sizes = list(range(n, min_size - 1, -1))
             found = False
+            
+            import time
+            start_time = time.time()
+            
             with multiprocessing.Pool() as pool:
                 for size, grid in pool.imap_unordered(solve_for_size, [(letters, s) for s in sizes]):
                     if grid:
+                        elapsed = time.time() - start_time
+                        print(f"Solution found in {elapsed:.2f} seconds:")
                         print_grid(grid)
                         found = True
                         break
+            
             if not found:
-                print("No valid Bananagram could be formed with the given letters.")
+                elapsed = time.time() - start_time
+                print(f"No valid Bananagram could be formed with the given letters.")
+                print(f"Search completed in {elapsed:.2f} seconds.")
         else:
             # Interactive mode
             interactive_mode()
