@@ -119,7 +119,7 @@ def control_led_based_on_distance():
             logger.debug("It's nighttime. Turning off the LED.")
             blinking = False  # Stop blinking
             lines.set_values([0])  # Turn off LED
-            return
+            return 300
         
         # Get the current location of the ISS
         response = urllib.request.urlopen(url)
