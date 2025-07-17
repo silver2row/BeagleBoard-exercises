@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TMP101 Temperature Plot</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+</head>
+<body>
+  <h1>TMP101 Temperature Log</h1>
+  <canvas id="tempChart" width="800" height="400"></canvas>
+  <script>
+    async function fetchData() {
+      const res = await fetch('/api/tmp101');
+      return res.json();
+    }
+
+    async function drawChart() {
+      const data = await fetchData();
+
+      new Chart(document.getElementById('tempChart'), {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: 'Temp1 (F)',
+              data: data.map(d => ({ x: d.timestamp, y: d.temp1 })),
+              borderColor: 'red',
+              fill: false
+            },
+            {
+              label: 'Temp2 (F)',
+              data: data.map(d => ({ x: d.timestamp, y: d.temp2 })),
+              borderColor: 'blue',
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                tooltipFormat: 'MMM d, h:mm a',
+                displayFormats: {
+                  minute: 'h:mm a',
+                  hour: 'MMM d, h a'
+                }
+              },
+              title: { display: true, text: 'Time' }
+            },
+            y: {
+              display: true,
+              title: { display: true, text: 'Temperature (F)' }
+            }
+          }
+        }
+      });
+    }
+    drawChart();
+  </script>
+</body>
+</html> 
