@@ -25,18 +25,23 @@ def read_temp(sensor_path):
         return None
 
 def log_data():
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS readings
-                 (timestamp TEXT, temp1 REAL, temp2 REAL)''')
-    temp1 = read_temp(sensor_paths[0])
-    temp2 = read_temp(sensor_paths[1])
-    if temp1 is not None and temp2 is not None:
-        temp1_f = c_to_f(temp1)
-        temp2_f = c_to_f(temp2)
-        c.execute("INSERT INTO readings VALUES (?, ?, ?)", (datetime.now().isoformat(), temp1_f, temp2_f))
-        conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS readings
+                     (timestamp TEXT, temp1 REAL, temp2 REAL)''')
+        temp1 = read_temp(sensor_paths[0])
+        temp2 = read_temp(sensor_paths[1])
+        if temp1 is not None and temp2 is not None:
+            temp1_f = c_to_f(temp1)
+            temp2_f = c_to_f(temp2)
+            c.execute("INSERT INTO readings VALUES (?, ?, ?)", (datetime.now().isoformat(), temp1_f, temp2_f))
+            conn.commit()
+        else:
+            print("Error: Could not read one or both temperature sensors. Data not logged.")
+        conn.close()
+    except Exception as e:
+        print(f"Error: Could not open or write to database '{db_path}': {e}")
 
 if __name__ == "__main__":
     log_data() 
