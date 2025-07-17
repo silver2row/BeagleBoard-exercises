@@ -23,13 +23,13 @@
         data: {
           datasets: [
             {
-              label: 'Temp1 (F)',
+              label: 'Outdoor Temp (F)',
               data: data.map(d => ({ x: d.timestamp, y: d.temp1 })),
               borderColor: 'red',
               fill: false
             },
             {
-              label: 'Temp2 (F)',
+              label: 'Indoor Temp (F)',
               data: data.map(d => ({ x: d.timestamp, y: d.temp2 })),
               borderColor: 'blue',
               fill: false
