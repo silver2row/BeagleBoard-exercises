@@ -1,5 +1,8 @@
 # Using tmp101's on the hwmon interface
 
+# To log every 15 minutes add to crontab via crontab -e
+*/15 * * * * cd /home/debian/exercises/iot/sql && ./log_tmp101.py >> tmp101_cron.log 2>&1
+
 BUS=i2c-1
 
 config-pin P9_24 i2c
