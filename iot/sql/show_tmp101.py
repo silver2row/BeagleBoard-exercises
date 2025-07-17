@@ -2,7 +2,6 @@
 
 import sqlite3
 from tabulate import tabulate
-from flask import Flask, jsonify
 
 DB_PATH = "tmp101_data.db"
 
@@ -13,7 +12,7 @@ def show_data():
     rows = c.fetchall()
     conn.close()
     if rows:
-        print(tabulate(rows, headers=["Timestamp", "Temp1 (C)", "Temp2 (C)"], tablefmt="github"))
+        print(tabulate(rows, headers=["Timestamp", "Temp1 (F)", "Temp2 (F)"], tablefmt="github"))
     else:
         print("No data found.")
 

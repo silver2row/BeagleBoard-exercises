@@ -4,6 +4,9 @@ import os
 import sqlite3
 from datetime import datetime
 
+def c_to_f(c):
+    return c * 9.0 / 5.0 + 32.0
+
 db_path = "tmp101_data.db"
 # Paths for the two TMP101 sensors
 sensor_paths = [
@@ -29,7 +32,9 @@ def log_data():
     temp1 = read_temp(sensor_paths[0])
     temp2 = read_temp(sensor_paths[1])
     if temp1 is not None and temp2 is not None:
-        c.execute("INSERT INTO readings VALUES (?, ?, ?)", (datetime.now().isoformat(), temp1, temp2))
+        temp1_f = c_to_f(temp1)
+        temp2_f = c_to_f(temp2)
+        c.execute("INSERT INTO readings VALUES (?, ?, ?)", (datetime.now().isoformat(), temp1_f, temp2_f))
         conn.commit()
     conn.close()
 
