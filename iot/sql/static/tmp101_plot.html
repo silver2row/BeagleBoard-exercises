@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>TMP101 Temperature Plot</title>
-  <meta http-equiv="refresh" content="900">
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
@@ -14,7 +13,20 @@
   <div class="chart-container">
     <canvas id="tempChart"></canvas>
   </div>
+  <div id="last-update" style="text-align:center; font-size:1.3em; margin-top:10px;"></div>
   <script>
+    let chart;
+
+    function showLastUpdate(latestTimestamp) {
+      if (!latestTimestamp) {
+        document.getElementById('last-update').textContent = '';
+        return;
+      }
+      const date = new Date(latestTimestamp);
+      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      document.getElementById('last-update').textContent = 'Last update: ' + date.toLocaleString(undefined, options);
+    }
+
     async function fetchData() {
       const res = await fetch('/api/tmp101');
       return res.json();
@@ -22,7 +34,8 @@
 
     async function drawChart() {
       const data = await fetchData();
-      new Chart(document.getElementById('tempChart'), {
+      const ctx = document.getElementById('tempChart').getContext('2d');
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
           datasets: [
@@ -45,14 +58,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: {
-                font: {
-                  size: 22
-                }
-              }
-            },
-            title: {
-              display: false
+              labels: { font: { size: 22 } }
             }
           },
           scales: {
@@ -68,36 +74,36 @@
               title: {
                 display: true,
                 text: 'Time',
-                font: {
-                  size: 24
-                }
+                font: { size: 24 }
               },
-              ticks: {
-                font: {
-                  size: 18
-                }
-              }
+              ticks: { font: { size: 18 } }
             },
             y: {
               display: true,
               title: {
                 display: true,
                 text: 'Temperature (F)',
-                font: {
-                  size: 24
-                }
+                font: { size: 24 }
               },
-              ticks: {
-                font: {
-                  size: 18
-                }
-              }
+              ticks: { font: { size: 18 } }
             }
           }
         }
       });
+      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
     }
-    drawChart();
+
+    async function updateChart() {
+      const data = await fetchData();
+      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      chart.update();
+      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+    }
+
+    drawChart().then(() => {
+      setInterval(updateChart, 10 * 1000); // Update every 10 seconds
+    });
   </script>
 </body>
 </html> 
