@@ -3,13 +3,17 @@
 <head>
   <title>TMP101 Temperature Plot</title>
   <meta http-equiv="refresh" content="900">
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
 </head>
 <body>
   <h1>TMP101 Temperature Log</h1>
-  <canvas id="tempChart" width="800" height="400"></canvas>
+  <button class="reload-btn" onclick="window.location.reload();">Reload</button>
+  <div class="chart-container">
+    <canvas id="tempChart"></canvas>
+  </div>
   <script>
     async function fetchData() {
       const res = await fetch('/api/tmp101');
@@ -18,7 +22,6 @@
 
     async function drawChart() {
       const data = await fetchData();
-
       new Chart(document.getElementById('tempChart'), {
         type: 'line',
         data: {
@@ -39,6 +42,19 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                font: {
+                  size: 22
+                }
+              }
+            },
+            title: {
+              display: false
+            }
+          },
           scales: {
             x: {
               type: 'time',
@@ -49,11 +65,33 @@
                   hour: 'MMM d, h a'
                 }
               },
-              title: { display: true, text: 'Time' }
+              title: {
+                display: true,
+                text: 'Time',
+                font: {
+                  size: 24
+                }
+              },
+              ticks: {
+                font: {
+                  size: 18
+                }
+              }
             },
             y: {
               display: true,
-              title: { display: true, text: 'Temperature (F)' }
+              title: {
+                display: true,
+                text: 'Temperature (F)',
+                font: {
+                  size: 24
+                }
+              },
+              ticks: {
+                font: {
+                  size: 18
+                }
+              }
             }
           }
         }

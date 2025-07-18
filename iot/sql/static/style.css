@@ -1,0 +1,39 @@
+.reload-btn {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  padding: 20px 40px;
+  font-size: 1.5em;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+.reload-btn:hover {
+  background-color: #388e3c;
+}
+body {
+  margin: 0;
+  padding: 0;
+}
+.chart-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+  width: 100vw;
+  height: 70vh;
+}
+#tempChart {
+  width: 90vw !important;
+  height: 60vh !important;
+  max-width: 1600px;
+  max-height: 900px;
+}
+h1 {
+  margin-left: 30px;
+  font-size: 2.5em;
+} 
