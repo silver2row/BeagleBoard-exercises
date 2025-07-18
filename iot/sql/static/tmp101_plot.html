@@ -9,6 +9,12 @@
 </head>
 <body>
   <h1>TMP101 Temperature Log</h1>
+  <label for="agg-select" style="margin-left:30px; font-size:1.2em;">Aggregation:</label>
+  <select id="agg-select" style="font-size:1.1em;">
+    <option value="raw">Raw</option>
+    <option value="hourly">Hourly</option>
+    <option value="daily">Daily</option>
+  </select>
   <button class="reload-btn" onclick="window.location.reload();">Reload</button>
   <div class="chart-container">
     <canvas id="tempChart"></canvas>
@@ -16,6 +22,28 @@
   <div id="last-update" style="text-align:center; font-size:1.3em; margin-top:10px;"></div>
   <script>
     let chart;
+
+    function aggregateData(data, mode) {
+      if (mode === 'raw') return data;
+      const groups = {};
+      data.forEach(d => {
+        const date = new Date(d.timestamp);
+        if (mode === 'hourly') {
+          date.setMinutes(0, 0, 0);
+        } else if (mode === 'daily') {
+          date.setHours(0, 0, 0, 0);
+        }
+        const key = date.toISOString();
+        if (!groups[key]) groups[key] = { temp1: [], temp2: [] };
+        groups[key].temp1.push(d.temp1);
+        groups[key].temp2.push(d.temp2);
+      });
+      return Object.entries(groups).map(([timestamp, temps]) => ({
+        timestamp,
+        temp1: temps.temp1.reduce((a, b) => a + b, 0) / temps.temp1.length,
+        temp2: temps.temp2.reduce((a, b) => a + b, 0) / temps.temp2.length
+      }));
+    }
 
     function showLastUpdate(latestTimestamp) {
       if (!latestTimestamp) {
@@ -33,7 +61,9 @@
     }
 
     async function drawChart() {
-      const data = await fetchData();
+      const aggMode = document.getElementById('agg-select').value;
+      const rawData = await fetchData();
+      const data = aggregateData(rawData, aggMode);
       const ctx = document.getElementById('tempChart').getContext('2d');
       chart = new Chart(ctx, {
         type: 'line',
@@ -58,7 +88,10 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: { font: { size: 22 } }
+              labels: { font: { size: 22 }, color: '#222' }
+            },
+            tooltip: {
+              enabled: false
             }
           },
           scales: {
@@ -74,18 +107,20 @@
               title: {
                 display: true,
                 text: 'Time',
-                font: { size: 24 }
+                font: { size: 24 },
+                color: '#222'
               },
-              ticks: { font: { size: 18 } }
+              ticks: { font: { size: 18 }, color: '#222' }
             },
             y: {
               display: true,
               title: {
                 display: true,
                 text: 'Temperature (F)',
-                font: { size: 24 }
+                font: { size: 24 },
+                color: '#222'
               },
-              ticks: { font: { size: 18 } }
+              ticks: { font: { size: 18 }, color: '#222' }
             }
           }
         }
@@ -94,15 +129,27 @@
     }
 
     async function updateChart() {
-      const data = await fetchData();
+      const aggMode = document.getElementById('agg-select').value;
+      const rawData = await fetchData();
+      const data = aggregateData(rawData, aggMode);
       chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
       chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
       chart.update();
       showLastUpdate(data.length ? data[data.length-1].timestamp : null);
     }
 
+    document.getElementById('agg-select').addEventListener('change', async function() {
+      const aggMode = this.value;
+      const rawData = await fetchData();
+      const data = aggregateData(rawData, aggMode);
+      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      chart.update();
+      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+    });
+
     drawChart().then(() => {
-      setInterval(updateChart, 10 * 1000); // Update every 10 seconds
+      setInterval(updateChart, 5 * 60 * 1000); // Update every 5 minutes
     });
   </script>
 </body>
