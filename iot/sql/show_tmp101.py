@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# This script displays all logged TMP101 temperature readings from the SQLite database in a table format.
+# It formats timestamps and uses the tabulate library for pretty output.
+
 import sqlite3
 from tabulate import tabulate
 from datetime import datetime
@@ -12,7 +15,7 @@ def show_data():
     c.execute("SELECT timestamp, temp1, temp2 FROM readings ORDER BY timestamp")
     rows = c.fetchall()
     conn.close()
-    # Format timestamp to nearest second
+    # Format timestamp to nearest second for readability
     formatted_rows = []
     for row in rows:
         ts = row[0]

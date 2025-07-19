@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 
+# This script reads temperature data from two TMP101 sensors and logs the readings to a SQLite database.
+# It is intended to be run periodically (e.g., via cron) to collect temperature data over time.
+
 import os
 import sqlite3
 from datetime import datetime

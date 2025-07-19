@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 
+# This script converts all temperature readings in the database from Celsius to Fahrenheit if needed.
+# It is useful if data was originally logged in Celsius and you want to update it to Fahrenheit.
+
 import sqlite3
 
 def c_to_f(c):
@@ -8,13 +11,14 @@ def c_to_f(c):
 DB_PATH = "tmp101_data.db"
 
 def convert_all_to_f():
+    """Convert all readings in the database from Celsius to Fahrenheit if they appear to be in Celsius."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT rowid, temp1, temp2 FROM readings")
     rows = c.fetchall()
     updated = 0
     for rowid, temp1, temp2 in rows:
-        # Only convert if values are in Celsius (e.g., below 60C)
+        # Only convert if both values are in Celsius (e.g., below 60C)
         if temp1 < 60 and temp2 < 60:
             f1 = c_to_f(temp1)
             f2 = c_to_f(temp2)
