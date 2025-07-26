@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>TMP101 Temperature Plot</title>
+  <title>Temperature Plot</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
 <body>
-  <h1>TMP101 Temperature Log</h1>
+  <h1>Temperature Log</h1>
   <label for="agg-select" style="margin-left:30px; font-size:1.2em;">Aggregation:</label>
   <select id="agg-select" style="font-size:1.1em;">
     <option value="raw">Raw</option>
@@ -65,7 +65,7 @@
               type: 'box',
               xMin: data[startIdx].timestamp,
               xMax: data[i-1].timestamp,
-              backgroundColor: 'rgba(255, 235, 59, 0.12)',
+              backgroundColor: 'rgba(255, 150, 59, 0.12)',
               borderWidth: 0
             };
           }
@@ -80,7 +80,7 @@
           type: 'box',
           xMin: data[startIdx].timestamp,
           xMax: data[data.length-1].timestamp,
-          backgroundColor: 'rgba(255, 235, 59, 0.12)',
+          backgroundColor: 'rgba(255, 150, 59, 0.12)',
           borderWidth: 0
         };
       }
