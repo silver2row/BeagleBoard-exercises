@@ -113,13 +113,13 @@
         data: {
           datasets: [
             {
-              label: 'Outdoor Temp (F)',
+              label: 'Outdoor Temp (°F)',
               data: data.map(d => ({ x: d.timestamp, y: d.temp1 })),
               borderColor: 'red',
               fill: false
             },
             {
-              label: 'Indoor Temp (F)',
+              label: 'Indoor Temp (°F)',
               data: data.map(d => ({ x: d.timestamp, y: d.temp2 })),
               borderColor: 'blue',
               fill: false
@@ -162,7 +162,7 @@
               display: true,
               title: {
                 display: true,
-                text: 'Temperature (F)',
+                text: 'Temperature (°F)',
                 font: { size: 24 },
                 color: '#222'
               },
