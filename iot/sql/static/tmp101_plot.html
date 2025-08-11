@@ -20,6 +20,14 @@
     <option value="30">30 Days</option>
     <option value="all">All Data</option>
   </select>
+  <label for="smooth-select" style="margin-left:30px; font-size:1.2em;">Smoothing:</label>
+  <select id="smooth-select" style="font-size:1.1em;">
+    <option value="0">None</option>
+    <option value="3">Light</option>
+    <option value="5" selected>Medium</option>
+    <option value="7">Heavy</option>
+    <option value="11">Very Heavy</option>
+  </select>
   <label for="agg-select" style="margin-left:30px; font-size:1.2em;">Aggregation:</label>
   <select id="agg-select" style="font-size:1.1em;">
     <option value="raw">Raw</option>
@@ -61,6 +69,34 @@
       const cutoffTime = new Date();
       cutoffTime.setDate(cutoffTime.getDate() - parseInt(days));
       return data.filter(d => new Date(d.timestamp) >= cutoffTime);
+    }
+
+    function smoothData(data, windowSize) {
+      if (windowSize <= 1) return data;
+      
+      const smoothed = [];
+      const halfWindow = Math.floor(windowSize / 2);
+      
+      for (let i = 0; i < data.length; i++) {
+        let temp1Sum = 0;
+        let temp2Sum = 0;
+        let count = 0;
+        
+        // Calculate moving average within the window
+        for (let j = Math.max(0, i - halfWindow); j <= Math.min(data.length - 1, i + halfWindow); j++) {
+          temp1Sum += data[j].temp1;
+          temp2Sum += data[j].temp2;
+          count++;
+        }
+        
+        smoothed.push({
+          timestamp: data[i].timestamp,
+          temp1: temp1Sum / count,
+          temp2: temp2Sum / count
+        });
+      }
+      
+      return smoothed;
     }
 
     function getDayAnnotations(data) {
@@ -122,10 +158,12 @@
     async function drawChart() {
       const aggMode = document.getElementById('agg-select').value;
       const daysToShow = document.getElementById('days-select').value;
+      const smoothLevel = parseInt(document.getElementById('smooth-select').value);
       const rawData = await fetchData();
       const filteredData = filterDataByDays(rawData, daysToShow);
       const data = aggregateData(filteredData, aggMode);
-      const dayAnnotations = getDayAnnotations(data);
+      const smoothedData = smoothData(data, smoothLevel);
+      const dayAnnotations = getDayAnnotations(smoothedData);
       const ctx = document.getElementById('tempChart').getContext('2d');
       chart = new Chart(ctx, {
         type: 'line',
@@ -133,13 +171,13 @@
           datasets: [
             {
               label: 'Outdoor Temp (°F)',
-              data: data.map(d => ({ x: d.timestamp, y: d.temp1 })),
+              data: smoothedData.map(d => ({ x: d.timestamp, y: d.temp1 })),
               borderColor: 'red',
               fill: false
             },
             {
               label: 'Indoor Temp (°F)',
-              data: data.map(d => ({ x: d.timestamp, y: d.temp2 })),
+              data: smoothedData.map(d => ({ x: d.timestamp, y: d.temp2 })),
               borderColor: 'blue',
               fill: false
             }
@@ -190,47 +228,71 @@
           }
         }
       });
-      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+      showLastUpdate(smoothedData.length ? smoothedData[smoothedData.length-1].timestamp : null);
     }
 
     async function updateChart() {
       const aggMode = document.getElementById('agg-select').value;
       const daysToShow = document.getElementById('days-select').value;
+      const smoothLevel = parseInt(document.getElementById('smooth-select').value);
       const rawData = await fetchData();
       const filteredData = filterDataByDays(rawData, daysToShow);
       const data = aggregateData(filteredData, aggMode);
-      const dayAnnotations = getDayAnnotations(data);
-      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
-      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      const smoothedData = smoothData(data, smoothLevel);
+      const dayAnnotations = getDayAnnotations(smoothedData);
+      chart.data.datasets[0].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp2 }));
       chart.options.plugins.annotation.annotations = dayAnnotations;
       chart.update();
-      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+      showLastUpdate(smoothedData.length ? smoothedData[smoothedData.length-1].timestamp : null);
     }
 
     document.getElementById('agg-select').addEventListener('change', async function() {
       const aggMode = this.value;
+      const daysToShow = document.getElementById('days-select').value;
+      const smoothLevel = parseInt(document.getElementById('smooth-select').value);
       const rawData = await fetchData();
-      const data = aggregateData(rawData, aggMode);
-      const dayAnnotations = getDayAnnotations(data);
-      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
-      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      const filteredData = filterDataByDays(rawData, daysToShow);
+      const data = aggregateData(filteredData, aggMode);
+      const smoothedData = smoothData(data, smoothLevel);
+      const dayAnnotations = getDayAnnotations(smoothedData);
+      chart.data.datasets[0].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp2 }));
       chart.options.plugins.annotation.annotations = dayAnnotations;
       chart.update();
-      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+      showLastUpdate(smoothedData.length ? smoothedData[smoothedData.length-1].timestamp : null);
     });
 
     document.getElementById('days-select').addEventListener('change', async function() {
       const daysToShow = this.value;
       const aggMode = document.getElementById('agg-select').value;
+      const smoothLevel = parseInt(document.getElementById('smooth-select').value);
       const rawData = await fetchData();
       const filteredData = filterDataByDays(rawData, daysToShow);
       const data = aggregateData(filteredData, aggMode);
-      const dayAnnotations = getDayAnnotations(data);
-      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
-      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      const smoothedData = smoothData(data, smoothLevel);
+      const dayAnnotations = getDayAnnotations(smoothedData);
+      chart.data.datasets[0].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp2 }));
       chart.options.plugins.annotation.annotations = dayAnnotations;
       chart.update();
-      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+      showLastUpdate(smoothedData.length ? smoothedData[smoothedData.length-1].timestamp : null);
+    });
+
+    document.getElementById('smooth-select').addEventListener('change', async function() {
+      const smoothLevel = parseInt(this.value);
+      const daysToShow = document.getElementById('days-select').value;
+      const aggMode = document.getElementById('agg-select').value;
+      const rawData = await fetchData();
+      const filteredData = filterDataByDays(rawData, daysToShow);
+      const data = aggregateData(filteredData, aggMode);
+      const smoothedData = smoothData(data, smoothLevel);
+      const dayAnnotations = getDayAnnotations(smoothedData);
+      chart.data.datasets[0].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = smoothedData.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      chart.options.plugins.annotation.annotations = dayAnnotations;
+      chart.update();
+      showLastUpdate(smoothedData.length ? smoothedData[smoothedData.length-1].timestamp : null);
     });
 
     drawChart().then(() => {
