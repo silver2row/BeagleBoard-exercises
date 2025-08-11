@@ -10,6 +10,15 @@
 </head>
 <body>
   <h1>Temperature Log</h1>
+  <label for="days-select" style="margin-left:30px; font-size:1.2em;">Days to Show:</label>
+  <select id="days-select" style="font-size:1.1em;">
+    <option value="1">1 Day</option>
+    <option value="3">3 Days</option>
+    <option value="7" selected>7 Days</option>
+    <option value="14">14 Days</option>
+    <option value="30">30 Days</option>
+    <option value="all">All Data</option>
+  </select>
   <label for="agg-select" style="margin-left:30px; font-size:1.2em;">Aggregation:</label>
   <select id="agg-select" style="font-size:1.1em;">
     <option value="raw">Raw</option>
@@ -44,6 +53,13 @@
         temp1: temps.temp1.reduce((a, b) => a + b, 0) / temps.temp1.length,
         temp2: temps.temp2.reduce((a, b) => a + b, 0) / temps.temp2.length
       }));
+    }
+
+    function filterDataByDays(data, days) {
+      if (days === 'all') return data;
+      const cutoffTime = new Date();
+      cutoffTime.setDate(cutoffTime.getDate() - parseInt(days));
+      return data.filter(d => new Date(d.timestamp) >= cutoffTime);
     }
 
     function getDayAnnotations(data) {
@@ -104,8 +120,10 @@
 
     async function drawChart() {
       const aggMode = document.getElementById('agg-select').value;
+      const daysToShow = document.getElementById('days-select').value;
       const rawData = await fetchData();
-      const data = aggregateData(rawData, aggMode);
+      const filteredData = filterDataByDays(rawData, daysToShow);
+      const data = aggregateData(filteredData, aggMode);
       const dayAnnotations = getDayAnnotations(data);
       const ctx = document.getElementById('tempChart').getContext('2d');
       chart = new Chart(ctx, {
@@ -176,8 +194,10 @@
 
     async function updateChart() {
       const aggMode = document.getElementById('agg-select').value;
+      const daysToShow = document.getElementById('days-select').value;
       const rawData = await fetchData();
-      const data = aggregateData(rawData, aggMode);
+      const filteredData = filterDataByDays(rawData, daysToShow);
+      const data = aggregateData(filteredData, aggMode);
       const dayAnnotations = getDayAnnotations(data);
       chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
       chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
@@ -190,6 +210,20 @@
       const aggMode = this.value;
       const rawData = await fetchData();
       const data = aggregateData(rawData, aggMode);
+      const dayAnnotations = getDayAnnotations(data);
+      chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
+      chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
+      chart.options.plugins.annotation.annotations = dayAnnotations;
+      chart.update();
+      showLastUpdate(data.length ? data[data.length-1].timestamp : null);
+    });
+
+    document.getElementById('days-select').addEventListener('change', async function() {
+      const daysToShow = this.value;
+      const aggMode = document.getElementById('agg-select').value;
+      const rawData = await fetchData();
+      const filteredData = filterDataByDays(rawData, daysToShow);
+      const data = aggregateData(filteredData, aggMode);
       const dayAnnotations = getDayAnnotations(data);
       chart.data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temp1 }));
       chart.data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.temp2 }));
