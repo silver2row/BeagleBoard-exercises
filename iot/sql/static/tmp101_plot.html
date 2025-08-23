@@ -90,23 +90,42 @@
   <script>
     let chart;
 
+    function parseLocalIsoToDate(isoString) {
+      if (typeof isoString !== 'string') return new Date(isoString);
+      const [datePart, timePartRaw] = isoString.split('T');
+      const [yearStr, monthStr, dayStr] = (datePart || '').split('-');
+      const [timeHms] = (timePartRaw || '').split('.');
+      const [hourStr = '0', minuteStr = '0', secondStr = '0'] = (timeHms || '').split(':');
+      const year = Number(yearStr);
+      const month = Number(monthStr) - 1;
+      const day = Number(dayStr);
+      const hour = Number(hourStr);
+      const minute = Number(minuteStr);
+      const second = Number(secondStr);
+      return new Date(year, month, day, hour, minute, second);
+    }
+
     function aggregateData(data, mode) {
-      if (mode === 'raw') return data;
+      if (mode === 'raw') return data.map(d => ({
+        timestamp: parseLocalIsoToDate(d.timestamp).getTime(),
+        temp1: d.temp1,
+        temp2: d.temp2
+      }));
       const groups = {};
       data.forEach(d => {
-        const date = new Date(d.timestamp);
+        const date = parseLocalIsoToDate(d.timestamp);
         if (mode === 'hourly') {
           date.setMinutes(0, 0, 0);
         } else if (mode === 'daily') {
           date.setHours(0, 0, 0, 0);
         }
-        const key = date.toISOString();
+        const key = date.getTime(); // local-time bucket
         if (!groups[key]) groups[key] = { temp1: [], temp2: [] };
         groups[key].temp1.push(d.temp1);
         groups[key].temp2.push(d.temp2);
       });
-      return Object.entries(groups).map(([timestamp, temps]) => ({
-        timestamp,
+      return Object.entries(groups).map(([timestampMs, temps]) => ({
+        timestamp: Number(timestampMs),
         temp1: temps.temp1.reduce((a, b) => a + b, 0) / temps.temp1.length,
         temp2: temps.temp2.reduce((a, b) => a + b, 0) / temps.temp2.length
       }));
@@ -116,7 +135,7 @@
       if (days === 'all') return data;
       const cutoffTime = new Date();
       cutoffTime.setDate(cutoffTime.getDate() - parseInt(days));
-      return data.filter(d => new Date(d.timestamp) >= cutoffTime);
+      return data.filter(d => parseLocalIsoToDate(d.timestamp) >= cutoffTime);
     }
 
     function smoothData(data, windowSize) {
@@ -155,7 +174,7 @@
       if (showTemp1) {
         datasets.push({
           label: 'Outdoor Temp (°F)',
-          data: data.map(d => ({ x: d.timestamp, y: d.temp1 })),
+          data: data.map(d => ({ x: Number(d.timestamp), y: d.temp1 })),
           borderColor: 'red',
           fill: false
         });
@@ -164,7 +183,7 @@
       if (showTemp2) {
         datasets.push({
           label: 'Indoor Temp (°F)',
-          data: data.map(d => ({ x: d.timestamp, y: d.temp2 })),
+          data: data.map(d => ({ x: Number(d.timestamp), y: d.temp2 })),
           borderColor: 'blue',
           fill: false
         });
@@ -306,9 +325,6 @@
             legend: {
               labels: { font: { size: 22 }, color: '#222' }
             },
-            tooltip: {
-              enabled: false
-            },
             annotation: {
               annotations: dayAnnotations
             }
@@ -317,10 +333,13 @@
             x: {
               type: 'time',
               time: {
+                unit: 'minute',
+                stepSize: 15,
                 tooltipFormat: 'd-MMM h:mm a',
                 displayFormats: {
-                  minute: 'h:mm a',
-                  hour: 'd-MMM, h a'
+                  minute: 'd-MMM, h:mm a',
+                  hour: 'd-MMM, h a',
+                  day: 'd-MMM'
                 }
               },
               title: {
@@ -329,7 +348,13 @@
                 font: { size: 24 },
                 color: '#222'
               },
-              ticks: { font: { size: 18 }, color: '#222' }
+              ticks: { 
+                source: 'data', 
+                font: { size: 18 }, 
+                color: '#222',
+                maxRotation: 45,
+                minRotation: 0
+              }
             },
             y: {
               display: true,
