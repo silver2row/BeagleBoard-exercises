@@ -47,34 +47,29 @@ def get_wind_direction(degrees):
 
 def control_led(cloud_cover):
     """
-    Control LED on gpiochip0 line 13 based on cloud cover
-    Turn on LED if cloud cover is less than 25%
+    Control LED brightness using backlight PWM control
+    Write 1-cloud_cover to /sys/class/backlight/backlight_pwm/brightness
     """
     try:
-        # Get the GPIO chip
-        chip = gpiod.Chip('gpiochip0')
+        # Calculate brightness inversely proportional to cloud cover
+        # 0% clouds = 100% brightness, 100% clouds = 0% brightness
+        brightness = 100 - cloud_cover
         
-        # Get line 13
-        line = chip.get_line(13)
+        # Write brightness value to backlight control
+        with open('/sys/class/backlight/backlight_pwm/brightness', 'w') as f:
+            f.write(str(brightness))
         
-        # Configure as output
-        line.request(consumer="weather_led", type=gpiod.LINE_REQ_DIR_OUT)
+        logger.info(f"LED brightness: {brightness:.2f} (Cloud cover: {cloud_cover}%)")
         
-        # Turn on LED if cloud cover < 25%, otherwise turn off
-        if cloud_cover < 25:
-            line.set_value(1)  # Turn on LED
-            logger.info(f"LED turned ON - Cloud cover {cloud_cover}% < 25%")
-        else:
-            line.set_value(0)  # Turn off LED
-            logger.info(f"LED turned OFF - Cloud cover {cloud_cover}% >= 25%")
-            
-        # Release the line
-        line.release()
-        chip.close()
-        
+    except FileNotFoundError:
+        logger.error("Backlight PWM control file not found: /sys/class/backlight/backlight_pwm/brightness")
+        print("⚠️  Backlight PWM control file not found")
+    except PermissionError:
+        logger.error("Permission denied writing to backlight PWM control file")
+        print("⚠️  Permission denied - run with sudo or check file permissions")
     except Exception as e:
-        logger.error(f"Error controlling LED: {e}")
-        print(f"⚠️  LED control error: {e}")
+        logger.error(f"Error controlling LED brightness: {e}")
+        print(f"⚠️  LED brightness control error: {e}")
 
 def get_weather(city, country_code=""):
     """
