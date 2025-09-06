@@ -9,6 +9,7 @@ import sys
 import time
 import logging
 from logging.handlers import RotatingFileHandler
+import gpiod
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -43,6 +44,37 @@ def get_wind_direction(degrees):
                   "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
     index = round(degrees / 22.5) % 16
     return directions[index]
+
+def control_led(cloud_cover):
+    """
+    Control LED on gpiochip0 line 13 based on cloud cover
+    Turn on LED if cloud cover is less than 25%
+    """
+    try:
+        # Get the GPIO chip
+        chip = gpiod.Chip('gpiochip0')
+        
+        # Get line 13
+        line = chip.get_line(13)
+        
+        # Configure as output
+        line.request(consumer="weather_led", type=gpiod.LINE_REQ_DIR_OUT)
+        
+        # Turn on LED if cloud cover < 25%, otherwise turn off
+        if cloud_cover < 25:
+            line.set_value(1)  # Turn on LED
+            logger.info(f"LED turned ON - Cloud cover {cloud_cover}% < 25%")
+        else:
+            line.set_value(0)  # Turn off LED
+            logger.info(f"LED turned OFF - Cloud cover {cloud_cover}% >= 25%")
+            
+        # Release the line
+        line.release()
+        chip.close()
+        
+    except Exception as e:
+        logger.error(f"Error controlling LED: {e}")
+        print(f"⚠️  LED control error: {e}")
 
 def get_weather(city, country_code=""):
     """
@@ -116,6 +148,9 @@ def display_weather(weather_data):
         print(f"🌅 Sunrise: {sunrise}")
         print(f"🌇 Sunset: {sunset}")
         print("=" * 50)
+        
+        # Control LED based on cloud cover
+        control_led(cloud_cover)
         
         logger.info(f"Weather displayed for {city}, {country}")
         
