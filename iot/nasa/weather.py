@@ -35,6 +35,15 @@ logger.addHandler(console_handler)
 API_KEY = os.environ.get("OPENWEATHER_API_KEY", "YOUR_API_KEY_HERE")
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
+def get_wind_direction(degrees):
+    """
+    Convert wind direction degrees to compass direction
+    """
+    directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", 
+                  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    index = round(degrees / 22.5) % 16
+    return directions[index]
+
 def get_weather(city, country_code=""):
     """
     Fetch current weather data for a given city
@@ -88,6 +97,7 @@ def display_weather(weather_data):
         pressure = weather_data["main"]["pressure"] / 33.863886666667  # Convert hPa to inHg
         description = weather_data['weather'][0]['description'].title()
         wind_speed = weather_data['wind']['speed']
+        wind_direction = weather_data['wind'].get('deg', 0)  # Wind direction in degrees
         cloud_cover = weather_data["clouds"]["all"]
         
         # Get sunrise and sunset times
@@ -101,7 +111,7 @@ def display_weather(weather_data):
         print(f"☁️  Conditions: {description}")
         print(f"💧 Humidity: {humidity}%")
         print(f"🔽 Pressure: {pressure:.1f} inHg")
-        print(f"💨 Wind Speed: {wind_speed} mph")
+        print(f"💨 Wind Speed: {wind_speed} mph {get_wind_direction(wind_direction)}")
         print(f"☁️  Cloud Cover: {cloud_cover}%")
         print(f"🌅 Sunrise: {sunrise}")
         print(f"🌇 Sunset: {sunset}")
